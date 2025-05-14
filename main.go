@@ -1,8 +1,67 @@
 package main
 
 import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"os"
 	"regexp"
+
+	"github.com/lib/pq"
 )
+
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "postgres"
+	password = ""
+	dbname   = "gophercises_phone"
+)
+
+func main() {
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=postgres sslmode=disable", host, port, user, password)
+
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		fmt.Printf("Could not open the database: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err = resetDB(db, dbname); err != nil {
+		fmt.Printf("Could not create a database: %v\n", err)
+		os.Exit(1)
+	}
+	db.Close()
+
+	db, err = sql.Open("postgres", psqlInfo)
+	if err != nil {
+		fmt.Printf("Could not open the database: %v\n", err)
+		os.Exit(1)
+	}
+	defer db.Close()
+	if err = db.Ping(); err != nil {
+		fmt.Printf("Could not ping the database the database: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func resetDB(db *sql.DB, name string) error {
+	if _, err := db.Exec("DROP DATABASE IF EXISTS " + name); err != nil {
+		return err
+	}
+	return createDB(db, name)
+}
+
+func createDB(db *sql.DB, name string) error {
+	valid := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
+	if !valid.MatchString(name) {
+		return errors.New("invalid database name")
+	}
+	if _, err := db.Exec("CREATE DATABASE " + pq.QuoteIdentifier(name)); err != nil {
+		return err
+	}
+	return nil
+}
 
 func normalize(phone string) string {
 	re := regexp.MustCompile("\\D")
