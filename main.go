@@ -18,12 +18,16 @@ const (
 	dbname   = "gophercises_phone"
 )
 
+var (
+	errNotOpen = errors.New("Could not open the database:")
+)
+
 func main() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=postgres sslmode=disable", host, port, user, password)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
-		fmt.Printf("Could not open the database: %v\n", err)
+		fmt.Printf("%v %v\n", errNotOpen, err)
 		os.Exit(1)
 	}
 
@@ -32,17 +36,29 @@ func main() {
 		os.Exit(1)
 	}
 	db.Close()
-
+	psqlInfo = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
 	db, err = sql.Open("postgres", psqlInfo)
 	if err != nil {
-		fmt.Printf("Could not open the database: %v\n", err)
+		fmt.Printf("%v %v\n", errNotOpen, err)
 		os.Exit(1)
 	}
 	defer db.Close()
-	if err = db.Ping(); err != nil {
-		fmt.Printf("Could not ping the database the database: %v\n", err)
+
+	if err = createPhoneTable(db); err != nil {
+		fmt.Printf("Could not create the table: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func createPhoneTable(db *sql.DB) error {
+	stmt := `
+		CREATE TABLE IF NOT EXISTS phone_numbers (
+			id SERIAL,
+			value VARCHAR(255)
+		)`
+	_, err := db.Exec(stmt)
+	return err
 }
 
 func resetDB(db *sql.DB, name string) error {
