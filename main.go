@@ -23,7 +23,7 @@ var (
 )
 
 func main() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=postgres sslmode=disable", host, port, user, password)
+	/*psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=postgres sslmode=disable", host, port, user, password)
 
 	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
@@ -35,10 +35,10 @@ func main() {
 		fmt.Printf("Could not create a database: %v\n", err)
 		os.Exit(1)
 	}
-	db.Close()
-	psqlInfo = fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+	db.Close()*/
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
-	db, err = sql.Open("postgres", psqlInfo)
+	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		fmt.Printf("%v %v\n", errNotOpen, err)
 		os.Exit(1)
@@ -49,6 +49,21 @@ func main() {
 		fmt.Printf("Could not create the table: %v\n", err)
 		os.Exit(1)
 	}
+
+	id, err := insertPhone(db, "1234567890")
+	if err != nil {
+		fmt.Printf("Could not add a phone number: %v\n", err)
+	}
+	fmt.Println(id)
+}
+
+func insertPhone(db *sql.DB, phone string) (int, error) {
+	stmt := `INSERT INTO phone_numbers(value) VALUES($1) RETURNING id`
+	var id int
+	if err := db.QueryRow(stmt, phone).Scan(&id); err != nil {
+		return -1, err
+	}
+	return id, nil
 }
 
 func createPhoneTable(db *sql.DB) error {
