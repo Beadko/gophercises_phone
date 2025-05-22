@@ -61,14 +61,34 @@ func main() {
 		"1234567892",
 		"(123)456-7892",
 	}
+
 	for _, ph := range phoneNumbers {
 
 		id, err := insertPhone(db, ph)
 		if err != nil {
 			fmt.Printf("Could not add a phone number: %v\n", err)
+		} else {
+			fmt.Println("Inserted phone with ID:", id)
 		}
-		fmt.Println("Inserted phone with ID:", id)
 	}
+
+	id := 2
+
+	num, err := getPhone(db, id)
+	if err != nil {
+		fmt.Printf("Could not get the phone number for the id= %d: %v\n", id, err)
+	} else {
+		fmt.Printf("Phone number with ID %d: %s\n", id, num)
+	}
+
+}
+
+func getPhone(db *sql.DB, id int) (string, error) {
+	var num string
+	if err := db.QueryRow("SELECT value FROM phone_numbers WHERE id=$1", id).Scan(&num); err != nil {
+		return "", err
+	}
+	return num, nil
 }
 
 func insertPhone(db *sql.DB, phone string) (int, error) {
