@@ -24,7 +24,7 @@ var (
 )
 
 func main() {
-	/*adminConnStr := fmt.Sprintf("postgres://%s:%s@%s:%d/postgres?sslmode=disable", user, password, host, port)
+	adminConnStr := fmt.Sprintf("postgres://%s:%s@%s:%d/postgres?sslmode=disable", user, password, host, port)
 
 	db, err := sql.Open("pgx", adminConnStr)
 	if err != nil {
@@ -37,10 +37,9 @@ func main() {
 		os.Exit(1)
 	}
 	db.Close()
-	*/
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", user, password, host, port, dbname)
 
-	db, err := sql.Open("pgx", connStr)
+	db, err = sql.Open("pgx", connStr)
 	if err != nil {
 		fmt.Printf("%v %v\n", errNotOpen, err)
 		os.Exit(1)
@@ -52,11 +51,24 @@ func main() {
 		os.Exit(1)
 	}
 
-	id, err := insertPhone(db, "1234567890")
-	if err != nil {
-		fmt.Printf("Could not add a phone number: %v\n", err)
+	phoneNumbers := []string{
+		"1234567890",
+		"123 456 7891",
+		"(123) 456 7892",
+		"(123) 456-7893",
+		"123-456-7894",
+		"123-456-7890",
+		"1234567892",
+		"(123)456-7892",
 	}
-	fmt.Println("Inserted phone with ID:", id)
+	for _, ph := range phoneNumbers {
+
+		id, err := insertPhone(db, ph)
+		if err != nil {
+			fmt.Printf("Could not add a phone number: %v\n", err)
+		}
+		fmt.Println("Inserted phone with ID:", id)
+	}
 }
 
 func insertPhone(db *sql.DB, phone string) (int, error) {
