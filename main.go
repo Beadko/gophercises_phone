@@ -6,8 +6,9 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
-	"github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 const (
@@ -23,9 +24,9 @@ var (
 )
 
 func main() {
-	/*psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=postgres sslmode=disable", host, port, user, password)
+	adminConnStr := fmt.Sprintf("postgres://%s:%s@%s:%d/postgres?sslmode=disable", user, password, host, port)
 
-	db, err := sql.Open("postgres", psqlInfo)
+	db, err := sql.Open("pgx", adminConnStr)
 	if err != nil {
 		fmt.Printf("%v %v\n", errNotOpen, err)
 		os.Exit(1)
@@ -35,10 +36,11 @@ func main() {
 		fmt.Printf("Could not create a database: %v\n", err)
 		os.Exit(1)
 	}
-	db.Close()*/
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-	db, err := sql.Open("postgres", psqlInfo)
+	db.Close()
+
+	connStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", user, password, host, port, dbname)
+
+	db, err = sql.Open("pgx", connStr)
 	if err != nil {
 		fmt.Printf("%v %v\n", errNotOpen, err)
 		os.Exit(1)
@@ -54,7 +56,7 @@ func main() {
 	if err != nil {
 		fmt.Printf("Could not add a phone number: %v\n", err)
 	}
-	fmt.Println(id)
+	fmt.Println("Inserted phone with ID:", id)
 }
 
 func insertPhone(db *sql.DB, phone string) (int, error) {
@@ -69,7 +71,7 @@ func insertPhone(db *sql.DB, phone string) (int, error) {
 func createPhoneTable(db *sql.DB) error {
 	stmt := `
 		CREATE TABLE IF NOT EXISTS phone_numbers (
-			id SERIAL,
+			id SERIAL PRIMARY KEY,
 			value VARCHAR(255)
 		)`
 	_, err := db.Exec(stmt)
@@ -77,34 +79,22 @@ func createPhoneTable(db *sql.DB) error {
 }
 
 func resetDB(db *sql.DB, name string) error {
-	if _, err := db.Exec("DROP DATABASE IF EXISTS " + name); err != nil {
+	if _, err := db.Exec(`DROP DATABASE IF EXISTS ` + quoteIdentifier(name)); err != nil {
 		return err
 	}
 	return createDB(db, name)
 }
 
 func createDB(db *sql.DB, name string) error {
-	valid := regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
-	if !valid.MatchString(name) {
-		return errors.New("invalid database name")
-	}
-	if _, err := db.Exec("CREATE DATABASE " + pq.QuoteIdentifier(name)); err != nil {
-		return err
-	}
-	return nil
+	_, err := db.Exec(`CREATE DATABASE ` + quoteIdentifier(name))
+	return err
+}
+
+func quoteIdentifier(name string) string {
+	return `"` + strings.ReplaceAll(name, `"`, `""`) + `"`
 }
 
 func normalize(phone string) string {
 	re := regexp.MustCompile("\\D")
 	return re.ReplaceAllString(phone, "")
 }
-
-/* func normalize(phone string) string {
-	var buf bytes.Buffer
-	for _, ch := range phone {
-		if ch >= '0' && ch <= '9' {
-			buf.WriteRune(ch)
-		}
-	}
-	return buf.String()
-}*/
