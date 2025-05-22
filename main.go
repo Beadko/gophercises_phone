@@ -24,7 +24,7 @@ var (
 )
 
 func main() {
-	adminConnStr := fmt.Sprintf("postgres://%s:%s@%s:%d/postgres?sslmode=disable", user, password, host, port)
+	/*adminConnStr := fmt.Sprintf("postgres://%s:%s@%s:%d/postgres?sslmode=disable", user, password, host, port)
 
 	db, err := sql.Open("pgx", adminConnStr)
 	if err != nil {
@@ -37,10 +37,10 @@ func main() {
 		os.Exit(1)
 	}
 	db.Close()
-
+	*/
 	connStr := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", user, password, host, port, dbname)
 
-	db, err = sql.Open("pgx", connStr)
+	db, err := sql.Open("pgx", connStr)
 	if err != nil {
 		fmt.Printf("%v %v\n", errNotOpen, err)
 		os.Exit(1)
